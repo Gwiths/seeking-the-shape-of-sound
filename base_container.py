@@ -19,7 +19,7 @@ def worker_init_fn_seed(worker_id):
 
 
 class BaseContainer(object):
-    def __init__(self):
+    def __init__(self):                     ## 初始化
         # init the args necessary
         fi = open(sys.argv[1],'r')
         args = yaml.load(fi, Loader=yaml.FullLoader)
@@ -32,7 +32,7 @@ class BaseContainer(object):
         torch.backends.cudnn.benchmark = True
         torch.manual_seed(1)
     
-    def init_training_container(self):
+    def init_training_container(self):      ## 初始化training_container
         # Define dataset
         self.train_set = self.Dataset_train(self.args.dataset, split='train')    
         self.val_set = self.Dataset_val(self.args.dataset, split='val')
@@ -71,25 +71,25 @@ class BaseContainer(object):
         self.stage = stage
 
         # Define Criterion
-        self.criterion = MMLoss(self.args.training)
+        self.criterion = MMLoss(self.args.training)      ## 定义LOSS
 
     def init_evaluation_container(self):
         # Define network
-        self.model = generate_net(self.args.models)
+        self.model = generate_net(self.args.models)    
 
         # # Resuming checkpoint
         state_dict, _, _, _ = load_checkpoint(checkpoint_path=self.args.evaluation.resume_eval)
         load_pretrained_model(self.model, state_dict)
         self.model = self.model.cuda()
 
-    def gen_optimizer(self, train_params, stage=0):
+    def gen_optimizer(self, train_params, stage=0):      ## 生成优化器    args中的train_params是模型中需要被训练的参数,由模型.params_group()函数返回
         args = self.args.training.optimizer
         self.optimizer = dict()
         for name in args.keys():
             item = args[name]
             params = []
             for i in item.train_params:
-                params += train_params[i]
+                params += train_params[i]      ## 把所有的需要优化的参数汇总
             if len(params) == 0:
                 continue
             if item.optim_method == 'sgd':
