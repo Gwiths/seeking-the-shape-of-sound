@@ -60,7 +60,7 @@ class Classifier(nn.Module):
         one_hot = torch.zeros(dist.size()).to(x.device)            ## one_hot.shape=(64, 924)
         one_hot.scatter_(1, y.view(-1, 1).long(), 1)               ## 将y（shape=(64,1)）转为one-hot编码(64, 924)
         if margin is None:
-            logit = (one_hot * (dist)) + ((1.0 - one_hot) * dist)      ## 不知为何 似乎没有必要
+            logit = (one_hot * (dist)) + ((1.0 - one_hot) * dist)      ## 不知为何 似乎没有必要    shape = (64, 924)
         else:
             logit = (one_hot * (dist - margin.unsqueeze(1))) + ((1.0 - one_hot) * dist)
         return logit
