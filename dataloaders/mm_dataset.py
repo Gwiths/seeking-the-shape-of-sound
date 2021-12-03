@@ -18,13 +18,13 @@ import pickle
 
 
 class MMDataset(BaseDataset):
-    def __init__(self, args, split='train', sample_mode='list', **kwargs):
+    def __init__(self, args, split='train', sample_mode='list', **kwargs):      ##修改给定的csv文件，形成meta文件。 之后getitem函数通过meta获取样本
         super().__init__(args)
-        self.root_dir_image = args.image_data_dir
-        self.root_dir_audio = args.audio_data_dir
+        self.root_dir_image = args.image_data_dir        ## ./data/VGG_ALL_FRONTAL
+        self.root_dir_audio = args.audio_data_dir        ## ./data/wav
         self.split = split
         if split == 'train':
-            args.train_list = os.path.join(args.list_dir, args.dataset_train+'.csv')
+            args.train_list = os.path.join(args.list_dir, args.dataset_train+'.csv')    ##./data/list_wav/vox1_train.csv
             self.transform = self.transform_train()
             _data_list = args.train_list
         elif split == 'val':
@@ -43,7 +43,7 @@ class MMDataset(BaseDataset):
         self.rank = 0
         self.split = split
 
-        def get_all_files(dir, ext):
+        def get_all_files(dir, ext):       ## 判断dir的路径是否是最终路径，如果是folder，则打开后将所有的最终路径汇总到list中
             for e in ext:
                 if dir.endswith(e):
                     return [dir]
@@ -59,7 +59,7 @@ class MMDataset(BaseDataset):
         len_image = 0
         len_audio = 0
 
-        with open(_data_list) as f:
+        with open(_data_list) as f:                              ##init中将数据集的各个数据从csv中读取并补充，最后保存到self.metas中
             lines = csv.DictReader(f, delimiter=',')
             for line in lines:
                 if line['Set'] == 'none':
@@ -71,11 +71,11 @@ class MMDataset(BaseDataset):
                 line['audio_list'] = get_all_files(osp.join(self.root_dir_audio, audio_id), ['.npy', '.wav'])
 
                 if not face_id in self.id_mapping.keys():
-                    self.id_mapping[face_id] = len(self.id_mapping)
+                    self.id_mapping[face_id] = len(self.id_mapping)    ## id_mapping = {'name' : index}
                 
                 len_image += len(line['image_list'])
                 len_audio += len(line['audio_list'])
-                self.metas.append(line)
+                self.metas.append(line)                              ## line 为 OrderedDict
 
         if sample_mode == 'list' and (split == 'val' or split == 'test'):
             self.triplet_list = []
@@ -123,7 +123,7 @@ class MMDataset(BaseDataset):
         aud = pil_loader(filename=audio_filename)
         return aud
 
-    def load(self, metas, image_id=-1, audio_id=-1, with_filename=False):
+    def load(self, metas, image_id=-1, audio_id=-1, with_filename=False):       ##每个ID中在所有的image_list和audio_list中各随机抽出一个样本
         if image_id < 0:
             image_id = np.random.choice(range(len(metas['image_list'])))
 
@@ -143,10 +143,10 @@ class MMDataset(BaseDataset):
                 sample['audio_filename'] = metas['audio_list'][audio_id].replace(self.root_dir_audio + '/', '')
                 sample['gender'] = metas['Gender']
 
-        return sample
+        return sample                          ##sample = {'ID':id_index, 'image':real_image, 'audio':real_audio}
 
-    def getitem(self, idx):
-        if self.triplet_list is not None:
+    def getitem(self, idx):                           ## 根据meta中的信息获取image和audio
+        if self.triplet_list is not None: 
             return self.getitem_triple(idx)
         else:
             sample = self.load(self.metas[idx])
