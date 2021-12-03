@@ -75,19 +75,19 @@ class Voice2Face(BaseModel):
             }
             return [out]
 
-        x = self.normalize(sample['image'])
+       x = self.normalize(sample['image'])      ##sample = {'ID':id_index, 'image':real_image, 'audio':real_audio}
         v = sample['audio']
-        rd = np.random.choice(range(int(2.5*16000), int(5.0*16000)))
+        rd = np.random.choice(range(int(2.5*16000), int(5.0*16000)))     ## 随机取一数
         rd_start = np.random.choice(range(0, v.shape[1] - rd))
-        v = v[:,rd_start:rd + rd_start]
+        v = v[:,rd_start:rd + rd_start]                                  ##　将audio切片，等等先去看下sample格式
         y = sample['ID']
 
-        z_x = self.F(x)
-        z_v = self.V(v)
+        z_x = self.F(x)                          ##128-dim   one batch = 64    shape=(64, 128)
+        z_v = self.V(v)                          ##128-dim
 
-        logit_x = self.F.cls(z_x, y)
+        logit_x = self.F.cls(z_x, y)           ## shape = (64, 924)
         logit_v = self.F.cls(z_v, y)
-
+        
         logit_cross = 0.5 * self.F.cls.cross_logit(z_x, z_v) + 0.5 * self.F.cls.cross_logit(z_v, z_x)
         loss_weight = F.cross_entropy(logit_x, y, reduction='none').detach() + F.cross_entropy(logit_v, y, reduction='none').detach()
         if self.args.weight:
